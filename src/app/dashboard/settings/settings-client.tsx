@@ -26,8 +26,6 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
   const [generating, setGenerating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-
   async function saveName() {
     if (!name.trim()) return;
     setSaving(true);
@@ -65,26 +63,6 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
       setNewToken(body.token);
     } finally {
       setGenerating(false);
-    }
-  }
-
-  async function downloadExtension() {
-    setDownloading(true);
-    try {
-      const res = await fetch("/api/extension/download");
-      if (!res.ok) {
-        toast({ title: "Error", description: "Failed to download extension.", variant: "destructive" });
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "storepilot-extension.zip";
-      a.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setDownloading(false);
     }
   }
 
@@ -142,10 +120,12 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="mb-4">
-            <Button variant="outline" onClick={downloadExtension} disabled={downloading}>
-              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              Download Chrome Extension (.zip)
-            </Button>
+            <a href="/storepilot-extension.zip" download="storepilot-extension.zip">
+              <Button variant="outline" type="button">
+                <Download className="h-4 w-4" />
+                Download Chrome Extension (.zip)
+              </Button>
+            </a>
             <p className="mt-1 text-xs text-muted-foreground">Download the Chrome extension ZIP, then load it on each store PC using Developer mode.</p>
           </div>
           <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
