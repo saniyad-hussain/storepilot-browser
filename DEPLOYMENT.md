@@ -35,7 +35,14 @@ npm run dev
 ```
 
 Open http://localhost:3000
-Demo login: `owner@demo-retail.example.com` / `DemoPassword123!`
+
+### Demo login credentials (created by seed)
+
+| Role | Email | Password |
+|---|---|---|
+| Owner | `owner@demo-retail.example.com` | `DemoPassword123!` |
+
+> These are created by `npm run db:seed`. Use them on both local and production after seeding.
 
 ---
 
