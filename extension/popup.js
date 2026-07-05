@@ -11,6 +11,9 @@ const els = {
   error: document.getElementById("errorState"),
   notConnected: document.getElementById("notConnectedState"),
   content: document.getElementById("content"),
+  secureBar: document.getElementById("secureBar"),
+  secureText: document.getElementById("secureText"),
+  networkName: document.getElementById("networkName"),
   linksList: document.getElementById("linksList"),
   linksEmpty: document.getElementById("linksEmpty"),
   templatesList: document.getElementById("templatesList"),
@@ -193,6 +196,30 @@ els.supportForm.addEventListener("submit", async (e) => {
   }
 });
 
+/** Show the green secure bar and detect network name. */
+function showSecureBar() {
+  els.secureBar.hidden = false;
+  els.secureText.textContent = "Your connection is secure";
+
+  if (navigator.connection) {
+    const conn = navigator.connection;
+    const type = conn.effectiveType ?? conn.type ?? "";
+    const typeLabel = { "4g": "4G", "3g": "3G", "2g": "2G", "slow-2g": "Slow", "wifi": "Wi-Fi", "ethernet": "Ethernet" }[type] ?? type.toUpperCase();
+    if (typeLabel) els.networkName.textContent = `Network: ${typeLabel}`;
+  }
+
+  if (location.hostname === "localhost" || !navigator.onLine) return;
+
+  try {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const url = tabs?.[0]?.url ?? "";
+      if (url.startsWith("https://")) {
+        els.networkName.textContent = els.networkName.textContent || "Enjoy your work!";
+      }
+    });
+  } catch (_) {}
+}
+
 /** Load bootstrap data and render the popup. */
 async function init() {
   showState("loading");
@@ -221,6 +248,7 @@ async function init() {
     renderLinks();
     renderTemplates();
     showState("content");
+    showSecureBar();
   } catch (err) {
     els.error.textContent = err.message;
     showState("error");
