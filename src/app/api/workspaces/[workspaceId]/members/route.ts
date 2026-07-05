@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { requireMembership, PermissionError } from "@/lib/permissions";
-import { getPlanLimits } from "@/lib/plans";
+import { getPlanLimits, Plan } from "@/lib/plans";
 import { inviteMemberSchema } from "@/lib/validation";
 import { handleApiError, parseBody } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
@@ -46,7 +46,7 @@ export async function POST(req: Request, { params }: Params) {
     const memberCount = await prisma.workspaceMember.count({
       where: { workspaceId: params.workspaceId },
     });
-    const limits = getPlanLimits(workspace.plan);
+    const limits = getPlanLimits(workspace.plan as Plan);
     if (memberCount >= limits.maxUsers) {
       throw new PermissionError(
         `Your plan allows up to ${limits.maxUsers} users. Upgrade to add more.`,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { requireMembership, PermissionError } from "@/lib/permissions";
-import { getPlanLimits } from "@/lib/plans";
+import { getPlanLimits, Plan } from "@/lib/plans";
 import { storeSchema } from "@/lib/validation";
 import { handleApiError, parseBody } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
@@ -38,7 +38,7 @@ export async function POST(req: Request, { params }: Params) {
       select: { plan: true },
     });
     const count = await prisma.store.count({ where: { workspaceId: params.workspaceId } });
-    const limits = getPlanLimits(workspace.plan);
+    const limits = getPlanLimits(workspace.plan as Plan);
     if (count >= limits.maxStores) {
       throw new PermissionError(
         `Your plan allows up to ${limits.maxStores} stores. Upgrade to add more.`,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authenticateExtension } from "@/lib/extension-auth";
 import { extensionRegisterDeviceSchema } from "@/lib/validation";
-import { getPlanLimits } from "@/lib/plans";
+import { getPlanLimits, Plan } from "@/lib/plans";
 import { handleApiError, parseBody } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         select: { plan: true },
       });
       const count = await prisma.device.count({ where: { workspaceId } });
-      const limits = getPlanLimits(workspace.plan);
+      const limits = getPlanLimits(workspace.plan as Plan);
       if (count >= limits.maxDevices) {
         return NextResponse.json(
           { error: `Your plan allows up to ${limits.maxDevices} devices. Upgrade to add more.` },
