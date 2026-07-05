@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "StorePilot Access Hub",
+  "version": "1.0.0",
+  "description": "A safer browser workspace for your store team - quick links, reply templates, and support requests. Does not store passwords.",
+  "permissions": ["storage", "tabs"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "StorePilot Access Hub"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}

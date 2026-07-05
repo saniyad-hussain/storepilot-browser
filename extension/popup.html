@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>StorePilot Access Hub</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div>
+          <div class="brand-name">StorePilot</div>
+          <div class="brand-sub" id="storeName">Not connected</div>
+        </div>
+      </div>
+      <button class="icon-btn" id="openOptions" title="Settings">⚙</button>
+    </header>
+
+    <!-- States -->
+    <div id="loadingState" class="state">Loading…</div>
+    <div id="errorState" class="state error" hidden></div>
+    <div id="notConnectedState" class="state" hidden>
+      <p>Not connected yet.</p>
+      <button class="btn primary" id="goToOptions">Open setup</button>
+    </div>
+
+    <!-- Main content -->
+    <main id="content" hidden>
+      <!-- Tabs -->
+      <nav class="tabs">
+        <button class="tab active" data-tab="links">Links</button>
+        <button class="tab" data-tab="templates">Templates</button>
+        <button class="tab" data-tab="support">Report Problem</button>
+      </nav>
+
+      <!-- Links tab -->
+      <section id="tab-links" class="tab-panel">
+        <div id="linksList"></div>
+        <div id="linksEmpty" class="empty" hidden>No links available for this store yet.</div>
+      </section>
+
+      <!-- Templates tab -->
+      <section id="tab-templates" class="tab-panel" hidden>
+        <div id="templatesList"></div>
+        <div id="templatesEmpty" class="empty" hidden>No reply templates yet.</div>
+      </section>
+
+      <!-- Support tab -->
+      <section id="tab-support" class="tab-panel" hidden>
+        <form id="supportForm">
+          <label class="field">
+            <span>Problem type</span>
+            <select id="supportType" required>
+              <option value="LOGIN_PROBLEM">Login problem</option>
+              <option value="NEED_ACCESS">Need access</option>
+              <option value="WRONG_STORE">Wrong store</option>
+              <option value="WEBSITE_ISSUE">Website issue</option>
+              <option value="SOCIAL_MEDIA_ISSUE">Social media issue</option>
+              <option value="BROWSER_SAFETY">Browser safety</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Describe the problem</span>
+            <textarea id="supportMessage" rows="4" required
+              placeholder="What happened? Do NOT include any passwords."></textarea>
+          </label>
+          <button type="submit" class="btn primary" id="supportSubmit">Send support request</button>
+          <div id="supportResult" class="support-result" hidden></div>
+        </form>
+      </section>
+    </main>
+
+    <!-- Safety reminder footer -->
+    <footer class="footer">
+      🔒 Never share passwords in chat or email. Use the approved password manager.
+    </footer>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

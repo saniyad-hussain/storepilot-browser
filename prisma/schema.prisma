@@ -1,0 +1,235 @@
+// StorePilot Browser Security & Access Hub - Prisma Schema
+// SECURITY NOTE: This schema intentionally never stores third-party tool
+// passwords. Only the user's own login passwordHash (bcrypt) is stored for
+// dashboard authentication.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (stored as String for SQLite compatibility)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedWorkspaces Workspace[]          @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[]
+  supportRequests SupportRequest[]
+  safetyChecks    BrowserSafetyCheck[]
+  auditLogs       AuditLog[]
+  extensionTokens ExtensionToken[]
+
+  @@index([email])
+}
+
+model Workspace {
+  id                   String             @id @default(cuid())
+  name                 String
+  ownerId              String
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  subscriptionStatus   String   @default("NONE")
+  plan                 String   @default("NONE")
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  owner           User                 @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members         WorkspaceMember[]
+  stores          Store[]
+  toolLinks       ToolLink[]
+  replyTemplates  ReplyTemplate[]
+  supportRequests SupportRequest[]
+  devices         Device[]
+  safetyChecks    BrowserSafetyCheck[]
+  auditLogs       AuditLog[]
+  extensionTokens ExtensionToken[]
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String   @default("STAFF")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model Store {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  address     String?
+  phone       String?
+  website     String?
+  logoUrl     String?
+  color       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  toolLinks       ToolLink[]
+  replyTemplates  ReplyTemplate[]
+  supportRequests SupportRequest[]
+  devices         Device[]
+  safetyChecks    BrowserSafetyCheck[]
+
+  @@index([workspaceId])
+}
+
+model ToolLink {
+  id          String       @id @default(cuid())
+  workspaceId String
+  storeId     String?
+  title       String
+  url         String
+  category    String   @default("OTHER")
+  description String?
+  isSensitive Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  store     Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([storeId])
+}
+
+model ReplyTemplate {
+  id          String   @id @default(cuid())
+  workspaceId String
+  storeId     String?
+  title       String
+  body        String
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  store     Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([storeId])
+}
+
+model SupportRequest {
+  id          String               @id @default(cuid())
+  workspaceId String
+  storeId     String?
+  userId      String?
+  deviceId    String?
+  type        String   @default("OTHER")
+  message     String
+  status      String   @default("OPEN")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  store     Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model Device {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  storeId            String?
+  name               String
+  extensionInstallId String    @unique
+  lastSeenAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  store           Store?               @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  supportRequests SupportRequest[]
+  safetyChecks    BrowserSafetyCheck[]
+
+  @@index([workspaceId])
+}
+
+model BrowserSafetyCheck {
+  id                          String   @id @default(cuid())
+  workspaceId                 String
+  deviceId                    String?
+  storeId                     String?
+  checkedById                 String?
+  chromeUpdated               Boolean?
+  suspiciousExtensionsRemoved Boolean?
+  savedPasswordRiskReviewed   Boolean?
+  twoFactorReviewed           Boolean?
+  recoveryInfoReviewed        Boolean?
+  notes                       String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  store     Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  checkedBy User?     @relation(fields: [checkedById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([createdAt])
+}
+
+// Extension auth token. Only a SHA-256 hash of the token is stored; the raw
+// token is shown once to the user at generation time.
+model ExtensionToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  tokenHash   String    @unique
+  label       String?
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}

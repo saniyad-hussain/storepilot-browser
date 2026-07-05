@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>StorePilot Access Hub — Setup</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>StorePilot Access Hub — Setup</h1>
+      <p>
+        Connect this store PC to your StorePilot workspace. You need a connection token from
+        your dashboard (Settings → Chrome extension setup).
+      </p>
+    </header>
+
+    <main class="card">
+      <label class="field">
+        <span>API base URL</span>
+        <input type="url" id="apiBaseUrl" placeholder="https://your-storepilot-domain.com" />
+        <small>The address of your StorePilot dashboard (no trailing slash).</small>
+      </label>
+
+      <label class="field">
+        <span>Connection token</span>
+        <input type="password" id="token" placeholder="sp_ext_..." autocomplete="off" />
+        <small>
+          Generated in the dashboard. This is NOT a password — never enter account passwords
+          here.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Device name</span>
+        <input type="text" id="deviceName" placeholder="e.g. Front Counter PC" />
+      </label>
+
+      <label class="field">
+        <span>Assigned store</span>
+        <select id="storeSelect">
+          <option value="">— Connect first to load stores —</option>
+        </select>
+      </label>
+
+      <div class="actions">
+        <button id="connectBtn" class="btn primary">Connect &amp; register device</button>
+        <button id="syncBtn" class="btn">Sync</button>
+      </div>
+
+      <div id="status" class="status" hidden></div>
+
+      <div class="workspace-info" id="workspaceInfo" hidden>
+        <h3>Connected workspace</h3>
+        <p id="workspaceName"></p>
+        <p id="subscriptionStatus"></p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>
+        🔒 StorePilot never stores passwords. This extension does not read browsing history,
+        cookies, or keystrokes.
+      </p>
+    </footer>
+  </div>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
