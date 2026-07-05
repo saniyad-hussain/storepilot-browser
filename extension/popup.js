@@ -43,6 +43,7 @@ let bootstrapData = null;
 
 function showState(state) {
   els.loading.hidden = state !== "loading";
+  els.loading.style.display = state === "loading" ? "flex" : "none";
   els.error.hidden = state !== "error";
   els.notConnected.hidden = state !== "notConnected";
   els.content.hidden = state !== "content";
@@ -201,31 +202,47 @@ function showSecureBar() {
   els.secureBar.hidden = false;
   els.secureText.textContent = "Your connection is secure";
 
+  let networkLabel = "";
+
   if (navigator.connection) {
     const conn = navigator.connection;
-    const type = conn.effectiveType ?? conn.type ?? "";
-    const typeLabel = { "4g": "4G", "3g": "3G", "2g": "2G", "slow-2g": "Slow", "wifi": "Wi-Fi", "ethernet": "Ethernet" }[type] ?? type.toUpperCase();
-    if (typeLabel) els.networkName.textContent = `Network: ${typeLabel}`;
+    const effectiveType = conn.effectiveType ?? "";
+    const type = conn.type ?? "";
+
+    if (type === "wifi" || effectiveType === "4g") {
+      networkLabel = type === "wifi" ? "Wi-Fi secured" : "Network secured (4G)";
+    } else if (type === "ethernet") {
+      networkLabel = "Ethernet secured";
+    } else if (effectiveType === "3g") {
+      networkLabel = "Network secured (3G)";
+    } else if (effectiveType === "2g" || effectiveType === "slow-2g") {
+      networkLabel = "Network secured (slow)";
+    } else if (type) {
+      networkLabel = `${type.toUpperCase()} secured`;
+    } else {
+      networkLabel = "Network: secured";
+    }
+  } else {
+    networkLabel = navigator.onLine ? "Network: secured" : "Offline";
   }
 
-  if (location.hostname === "localhost" || !navigator.onLine) return;
-
-  try {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const url = tabs?.[0]?.url ?? "";
-      if (url.startsWith("https://")) {
-        els.networkName.textContent = els.networkName.textContent || "Enjoy your work!";
-      }
-    });
-  } catch (_) {}
+  els.networkName.textContent = networkLabel;
 }
 
 /** Load bootstrap data and render the popup. */
 async function init() {
   showState("loading");
 
+  const loadingTimeout = setTimeout(() => {
+    if (els.loading.style.display !== "none") {
+      els.loading.style.display = "none";
+      els.loading.hidden = true;
+    }
+  }, 3000);
+
   const settings = await getSettings();
   if (!settings.apiBaseUrl || !settings.token) {
+    clearTimeout(loadingTimeout);
     showState("notConnected");
     return;
   }
@@ -245,11 +262,13 @@ async function init() {
       "Connected";
     els.storeName.textContent = storeName;
 
+    clearTimeout(loadingTimeout);
     renderLinks();
     renderTemplates();
     showState("content");
     showSecureBar();
   } catch (err) {
+    clearTimeout(loadingTimeout);
     els.error.textContent = err.message;
     showState("error");
   }
