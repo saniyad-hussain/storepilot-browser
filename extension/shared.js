@@ -14,13 +14,20 @@ export async function getSettings() {
     "installId",
     "deviceName",
     "storeId",
+    "storeIds",
   ]);
+  const storeIds = data.storeIds
+    ? data.storeIds
+    : data.storeId
+    ? [data.storeId]
+    : [];
   return {
     apiBaseUrl: data.apiBaseUrl || "",
     token: data.token || "",
     installId: data.installId || "",
     deviceName: data.deviceName || "",
     storeId: data.storeId || "",
+    storeIds,
   };
 }
 

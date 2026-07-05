@@ -9,7 +9,7 @@ const els = {
   apiBaseUrl: document.getElementById("apiBaseUrl"),
   token: document.getElementById("token"),
   deviceName: document.getElementById("deviceName"),
-  storeSelect: document.getElementById("storeSelect"),
+  storeCheckboxes: document.getElementById("storeCheckboxes"),
   connectBtn: document.getElementById("connectBtn"),
   syncBtn: document.getElementById("syncBtn"),
   status: document.getElementById("status"),
@@ -24,18 +24,54 @@ function setStatus(message, ok) {
   els.status.hidden = false;
 }
 
-function populateStores(stores, selectedId) {
-  els.storeSelect.innerHTML = "";
-  const noneOpt = document.createElement("option");
-  noneOpt.value = "";
-  noneOpt.textContent = "— No store assigned —";
-  els.storeSelect.appendChild(noneOpt);
+function getCheckedStoreIds() {
+  return Array.from(
+    els.storeCheckboxes.querySelectorAll("input[type=checkbox]:checked")
+  ).map((cb) => cb.value);
+}
+
+function populateStores(stores, selectedIds = []) {
+  els.storeCheckboxes.innerHTML = "";
+  if (!stores.length) {
+    els.storeCheckboxes.innerHTML = '<p class="muted-hint" style="padding:10px">No stores found in this workspace.</p>';
+    return;
+  }
   for (const store of stores) {
-    const opt = document.createElement("option");
-    opt.value = store.id;
-    opt.textContent = store.name;
-    if (store.id === selectedId) opt.selected = true;
-    els.storeSelect.appendChild(opt);
+    const item = document.createElement("label");
+    item.className = "store-checkbox-item";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = store.id;
+    cb.checked = selectedIds.includes(store.id);
+
+    const label = document.createElement("span");
+    label.className = "store-label";
+    label.textContent = store.name;
+
+    item.appendChild(cb);
+    item.appendChild(label);
+    els.storeCheckboxes.appendChild(item);
+
+    cb.addEventListener("change", saveStoreSelection);
+  }
+}
+
+async function saveStoreSelection() {
+  const { apiBaseUrl, token, deviceName } = await getSettings();
+  if (!apiBaseUrl || !token || !deviceName) return;
+  const storeIds = getCheckedStoreIds();
+  const primaryStoreId = storeIds[0] || null;
+  try {
+    const installId = await ensureInstallId();
+    await apiFetch("/api/extension/register-device", {
+      method: "POST",
+      body: JSON.stringify({ extensionInstallId: installId, name: deviceName, storeId: primaryStoreId }),
+    });
+    await saveSettings({ storeIds, storeId: primaryStoreId || "" });
+    setStatus(`Stores updated (${storeIds.length} selected).`, true);
+  } catch (err) {
+    setStatus(err.message, false);
   }
 }
 
@@ -51,8 +87,9 @@ async function sync({ silent = false } = {}) {
     els.subscriptionStatus.textContent = `Subscription: ${data.subscriptionStatus}`;
     els.workspaceInfo.hidden = false;
 
-    const { storeId } = await getSettings();
-    populateStores(data.stores, data.device?.storeId ?? storeId);
+    const { storeIds } = await getSettings();
+    const activeIds = storeIds.length ? storeIds : (data.device?.storeId ? [data.device.storeId] : []);
+    populateStores(data.stores, activeIds);
     if (data.device?.name && !els.deviceName.value) {
       els.deviceName.value = data.device.name;
     }
@@ -86,16 +123,16 @@ async function connect() {
     // Verify token and load stores first.
     const data = await sync({ silent: true });
 
-    // Register (or update) this device.
+    // Register (or update) this device with primary store.
     const installId = await ensureInstallId();
-    const storeId = els.storeSelect.value || null;
+    const storeIds = getCheckedStoreIds();
+    const primaryStoreId = storeIds[0] || null;
     await apiFetch("/api/extension/register-device", {
       method: "POST",
-      body: JSON.stringify({ extensionInstallId: installId, name: deviceName, storeId }),
+      body: JSON.stringify({ extensionInstallId: installId, name: deviceName, storeId: primaryStoreId }),
     });
-    await saveSettings({ storeId: storeId || "" });
+    await saveSettings({ storeIds, storeId: primaryStoreId || "" });
 
-    populateStores(data.stores, storeId);
     setStatus("Connected and device registered successfully.", true);
   } catch (err) {
     setStatus(err.message, false);
@@ -106,24 +143,6 @@ async function connect() {
 
 els.connectBtn.addEventListener("click", connect);
 els.syncBtn.addEventListener("click", () => sync());
-
-// Persist store selection changes after initial registration.
-els.storeSelect.addEventListener("change", async () => {
-  const { apiBaseUrl, token, deviceName } = await getSettings();
-  if (!apiBaseUrl || !token || !deviceName) return;
-  try {
-    const installId = await ensureInstallId();
-    const storeId = els.storeSelect.value || null;
-    await apiFetch("/api/extension/register-device", {
-      method: "POST",
-      body: JSON.stringify({ extensionInstallId: installId, name: deviceName, storeId }),
-    });
-    await saveSettings({ storeId: storeId || "" });
-    setStatus("Store assignment updated.", true);
-  } catch (err) {
-    setStatus(err.message, false);
-  }
-});
 
 // Initialize form from saved settings.
 (async function init() {

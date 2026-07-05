@@ -36,12 +36,12 @@
         <input type="text" id="deviceName" placeholder="e.g. Front Counter PC" />
       </label>
 
-      <label class="field">
-        <span>Assigned store</span>
-        <select id="storeSelect">
-          <option value="">— Connect first to load stores —</option>
-        </select>
-      </label>
+      <div class="field">
+        <span>Assigned stores <small class="muted">(select all that apply)</small></span>
+        <div id="storeCheckboxes" class="store-checkboxes">
+          <p class="muted-hint">Connect first to load stores.</p>
+        </div>
+      </div>
 
       <div class="actions">
         <button id="connectBtn" class="btn primary">Connect &amp; register device</button>

@@ -5,6 +5,7 @@
  */
 import { apiFetch, ensureInstallId, getSettings, sendHeartbeat } from "./shared.js";
 
+
 const els = {
   storeName: document.getElementById("storeName"),
   loading: document.getElementById("loadingState"),
@@ -66,10 +67,10 @@ document.querySelectorAll(".tab").forEach((tab) => {
   });
 });
 
-/** Render categorized links, filtered to the assigned store (plus shared). */
+/** Render categorized links, filtered to assigned stores (plus shared). */
 function renderLinks() {
-  const storeId = bootstrapData.device?.storeId ?? null;
-  const links = bootstrapData.links.filter((l) => !l.storeId || l.storeId === storeId);
+  const storeIds = bootstrapData._storeIds ?? [];
+  const links = bootstrapData.links.filter((l) => !l.storeId || storeIds.includes(l.storeId));
 
   els.linksList.innerHTML = "";
   if (links.length === 0) {
@@ -129,8 +130,8 @@ function renderLinks() {
 
 /** Render reply templates with copy buttons. */
 function renderTemplates() {
-  const storeId = bootstrapData.device?.storeId ?? null;
-  const templates = bootstrapData.templates.filter((t) => !t.storeId || t.storeId === storeId);
+  const storeIds = bootstrapData._storeIds ?? [];
+  const templates = bootstrapData.templates.filter((t) => !t.storeId || storeIds.includes(t.storeId));
 
   els.templatesList.innerHTML = "";
   if (templates.length === 0) {
@@ -256,11 +257,21 @@ async function init() {
       `/api/extension/bootstrap?installId=${encodeURIComponent(installId)}`
     );
 
-    const storeName =
-      bootstrapData.device?.store?.name ??
-      bootstrapData.workspace?.name ??
-      "Connected";
-    els.storeName.textContent = storeName;
+    const { storeIds } = await getSettings();
+    const activeStoreIds = storeIds.length
+      ? storeIds
+      : bootstrapData.device?.storeId
+      ? [bootstrapData.device.storeId]
+      : [];
+    bootstrapData._storeIds = activeStoreIds;
+
+    const storeNames = activeStoreIds.length
+      ? bootstrapData.stores
+          ?.filter((s) => activeStoreIds.includes(s.id))
+          .map((s) => s.name)
+          .join(", ") || bootstrapData.workspace?.name
+      : bootstrapData.workspace?.name ?? "Connected";
+    els.storeName.textContent = storeNames;
 
     clearTimeout(loadingTimeout);
     renderLinks();
