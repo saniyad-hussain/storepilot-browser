@@ -44,8 +44,8 @@ export async function getMembership(
   return {
     workspaceId,
     userId,
-    role: member.role,
-    subscriptionStatus: member.workspace.subscriptionStatus,
+    role: member.role as Role,
+    subscriptionStatus: member.workspace.subscriptionStatus as SubscriptionStatus,
   };
 }
 

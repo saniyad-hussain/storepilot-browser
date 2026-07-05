@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUserId } from "@/lib/auth";
-import { getDefaultMembership, isSubscriptionUsable } from "@/lib/permissions";
+import { getDefaultMembership, isSubscriptionUsable, Role } from "@/lib/permissions";
 
 /**
  * Server helper for dashboard pages. Redirects to login when unauthenticated
@@ -15,7 +15,7 @@ export async function requireDashboardContext() {
 
   return {
     userId,
-    role: membership.role,
+    role: membership.role as Role,
     workspace: membership.workspace,
     subscriptionUsable: isSubscriptionUsable(membership.workspace.subscriptionStatus),
   };
