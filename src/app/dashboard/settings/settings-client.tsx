@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Settings, Shield, KeyRound, Chrome, Copy, Check, Loader2 } from "lucide-react";
+import { Settings, Shield, KeyRound, Chrome, Copy, Check, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
   const [generating, setGenerating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   async function saveName() {
     if (!name.trim()) return;
@@ -64,6 +65,26 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
       setNewToken(body.token);
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function downloadExtension() {
+    setDownloading(true);
+    try {
+      const res = await fetch("/api/extension/download");
+      if (!res.ok) {
+        toast({ title: "Error", description: "Failed to download extension.", variant: "destructive" });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "storepilot-extension.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -120,6 +141,13 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="mb-4">
+            <Button variant="outline" onClick={downloadExtension} disabled={downloading}>
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Download Extension (.zip)
+            </Button>
+            <p className="mt-1 text-xs text-muted-foreground">Download the Chrome extension ZIP, then load it on each store PC.</p>
+          </div>
           <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
             <li>
               Open Chrome on the store PC and go to <code>chrome://extensions</code>.
