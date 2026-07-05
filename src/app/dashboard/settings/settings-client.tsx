@@ -144,9 +144,9 @@ export function SettingsClient({ workspaceId, workspaceName, canManage, canGener
           <div className="mb-4">
             <Button variant="outline" onClick={downloadExtension} disabled={downloading}>
               {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              Download Extension (.zip)
+              Download Chrome Extension (.zip)
             </Button>
-            <p className="mt-1 text-xs text-muted-foreground">Download the Chrome extension ZIP, then load it on each store PC.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Download the Chrome extension ZIP, then load it on each store PC using Developer mode.</p>
           </div>
           <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
             <li>
