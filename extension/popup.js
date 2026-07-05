@@ -15,6 +15,8 @@ const els = {
   secureBar: document.getElementById("secureBar"),
   secureText: document.getElementById("secureText"),
   networkName: document.getElementById("networkName"),
+  storeSwitcher: document.getElementById("storeSwitcher"),
+  storeTabs: document.getElementById("storeTabs"),
   linksList: document.getElementById("linksList"),
   linksEmpty: document.getElementById("linksEmpty"),
   templatesList: document.getElementById("templatesList"),
@@ -41,6 +43,7 @@ const CATEGORY_LABELS = {
 };
 
 let bootstrapData = null;
+let activeStoreId = null;
 
 function showState(state) {
   els.loading.hidden = state !== "loading";
@@ -67,10 +70,40 @@ document.querySelectorAll(".tab").forEach((tab) => {
   });
 });
 
-/** Render categorized links, filtered to assigned stores (plus shared). */
+/** Build the store switcher pill bar. */
+function renderStoreSwitcher(stores) {
+  if (stores.length <= 1) {
+    els.storeSwitcher.hidden = true;
+    return;
+  }
+  els.storeSwitcher.hidden = false;
+  els.storeTabs.innerHTML = "";
+
+  for (const store of stores) {
+    const btn = document.createElement("button");
+    btn.className = "store-tab-btn" + (store.id === activeStoreId ? " active" : "");
+    btn.dataset.storeId = store.id;
+
+    const dot = document.createElement("span");
+    dot.className = "store-dot";
+    btn.appendChild(dot);
+    btn.appendChild(document.createTextNode(store.name));
+
+    btn.addEventListener("click", () => {
+      activeStoreId = store.id;
+      els.storeName.textContent = store.name;
+      renderStoreSwitcher(stores);
+      renderLinks();
+      renderTemplates();
+    });
+
+    els.storeTabs.appendChild(btn);
+  }
+}
+
+/** Render categorized links, filtered to active store (plus shared). */
 function renderLinks() {
-  const storeIds = bootstrapData._storeIds ?? [];
-  const links = bootstrapData.links.filter((l) => !l.storeId || storeIds.includes(l.storeId));
+  const links = bootstrapData.links.filter((l) => !l.storeId || l.storeId === activeStoreId);
 
   els.linksList.innerHTML = "";
   if (links.length === 0) {
@@ -130,8 +163,7 @@ function renderLinks() {
 
 /** Render reply templates with copy buttons. */
 function renderTemplates() {
-  const storeIds = bootstrapData._storeIds ?? [];
-  const templates = bootstrapData.templates.filter((t) => !t.storeId || storeIds.includes(t.storeId));
+  const templates = bootstrapData.templates.filter((t) => !t.storeId || t.storeId === activeStoreId);
 
   els.templatesList.innerHTML = "";
   if (templates.length === 0) {
@@ -258,20 +290,21 @@ async function init() {
     );
 
     const { storeIds } = await getSettings();
-    const activeStoreIds = storeIds.length
+    const savedIds = storeIds.length
       ? storeIds
       : bootstrapData.device?.storeId
       ? [bootstrapData.device.storeId]
       : [];
-    bootstrapData._storeIds = activeStoreIds;
 
-    const storeNames = activeStoreIds.length
-      ? bootstrapData.stores
-          ?.filter((s) => activeStoreIds.includes(s.id))
-          .map((s) => s.name)
-          .join(", ") || bootstrapData.workspace?.name
-      : bootstrapData.workspace?.name ?? "Connected";
-    els.storeName.textContent = storeNames;
+    const activeStores = bootstrapData.stores?.filter((s) => savedIds.includes(s.id)) ?? [];
+
+    // Set initially active store to first selected
+    activeStoreId = activeStores[0]?.id ?? null;
+
+    const firstName = activeStores[0]?.name ?? bootstrapData.workspace?.name ?? "Connected";
+    els.storeName.textContent = firstName;
+
+    renderStoreSwitcher(activeStores);
 
     clearTimeout(loadingTimeout);
     renderLinks();
